@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>금촌중학교 진로상담 신청 시스템 | Geumchon Career Hub</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti for Completion Feedback -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            blue: '#1E88E5',
+                            darkblue: '#1565C0',
+                            lightblue: '#E3F2FD',
+                            green: '#43A047',
+                            lightgreen: '#E8F5E9',
+                            yellow: '#FB8C00',
+                            lightyellow: '#FFF3E0',
+                            bg: '#F8F9FA'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Pretendard', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'Roboto', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom UI Tweaks & Scrollbars */
+        body {
+            background-color: #F8F9FA;
+            color: #212121;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .step-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-shadow {
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+        }
+        .active-tab {
+            border-bottom: 3px solid #1E88E5;
+            color: #1E88E5;
+            font-weight: 700;
+        }
+        /* Touch ripples & bouncy scales */
+        .touch-scale {
+            transition: transform 0.15s ease;
+        }
+        .touch-scale:active {
+            transform: scale(0.97);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans antialiased text-gray-800">
+
+    <!-- Header & Navigation Bar -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-40 card-shadow">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+            <!-- School Brand Logo & Title -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('apply')">
+                <!-- SVG Emblem representing Geumchon Middle School (Pine & Plum Blossom Concept) -->
+                <div class="w-10 h-10 rounded-full bg-blue-50 border border-blue-200 flex items-center justify-center shrink-0 shadow-sm">
+                    <svg class="w-7 h-7 text-brand-blue" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Emblem Shield Base -->
+                        <path d="M50 5 L85 20 V50 C85 70 50 92 50 92 C50 92 15 70 15 50 V20 L50 5 Z" fill="#1E88E5" opacity="0.15" stroke="#1565C0" stroke-width="4"/>
+                        <!-- Pine Tree Symbol (Green) -->
+                        <path d="M50 22 L65 42 H55 L68 58 H54 L70 74 H30 L46 58 H32 L45 42 H35 L50 22 Z" fill="#43A047"/>
+                        <!-- Plum Blossom Center Accent (Yellow/Orange) -->
+                        <circle cx="50" cy="48" r="6" fill="#FB8C00"/>
+                        <!-- Trunk Base -->
+                        <rect x="47" y="74" width="6" height="12" fill="#5D4037"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold text-gray-900 leading-tight flex items-center gap-1.5">
+                        금촌중학교 <span class="text-xs bg-blue-100 text-brand-blue px-2 py-0.5 rounded-full font-semibold hidden sm:inline-block">진로상담</span>
+                    </h1>
+                    <p class="text-xs text-gray-500 font-medium">Geumchon Career Hub</p>
+                </div>
+            </div>
+
+            <!-- Mode Switcher Tabs -->
+            <div class="flex items-center space-x-1 sm:space-x-2 bg-gray-100 p-1 rounded-xl text-xs sm:text-sm font-medium">
+                <button id="nav-apply" onclick="switchTab('apply')" class="px-3 py-1.5 rounded-lg text-gray-600 hover:text-gray-900 transition-all font-semibold active-tab bg-white shadow-sm">
+                    <i class="fa-solid fa-calendar-plus mr-1"></i>상담 신청
+                </button>
+                <button id="nav-status" onclick="switchTab('status')" class="px-3 py-1.5 rounded-lg text-gray-600 hover:text-gray-900 transition-all">
+                    <i class="fa-solid fa-list-check mr-1"></i>내 예약
+                    <span id="my-badge" class="hidden ml-1 px-1.5 py-0.2 bg-red-500 text-white text-xs rounded-full font-bold">0</span>
+                </button>
+                <button id="nav-admin" onclick="switchTab('admin')" class="px-3 py-1.5 rounded-lg text-gray-600 hover:text-gray-900 transition-all">
+                    <i class="fa-solid fa-user-shield mr-1"></i>교사 모드
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-5xl w-full mx-auto p-4 sm:p-6">
+
+        <!-- ==================== TAB 1: 학생 상담 신청 화면 ==================== -->
+        <section id="tab-apply" class="space-y-6">
+            <!-- Hero Banner -->
+            <div class="bg-gradient-to-r from-brand-blue to-blue-700 rounded-2xl p-6 text-white card-shadow relative overflow-hidden">
+                <div class="relative z-10">
+                    <span class="bg-white/20 text-xs px-2.5 py-1 rounded-full font-semibold uppercase tracking-wider backdrop-blur-md">꿈과 미래를 여는 공간</span>
+                    <h2 class="text-xl sm:text-2xl font-bold mt-2">꿈을 향해 나아가는 금촌중학교 진로상담소 🎓</h2>
+                    <p class="text-blue-100 text-xs sm:text-sm mt-1 max-w-xl">
+                        고교 진학, 적성 탐색, 학업 고민 등 무엇이든 편하게 이야기해보세요. 진로 선생님께서 여러분의 소중한 이야기를 기다립니다.
+                    </p>
+                </div>
+                <!-- Background Decorative SVG Circle -->
+                <svg class="absolute -right-6 -bottom-10 w-48 h-48 opacity-10 text-white" fill="currentColor" viewBox="0 0 200 200">
+                    <path d="M45,-60C58,-51,68,-38,72,-23C77,-8,76,10,70,26C64,42,53,56,38,65C23,74,4,78,-16,76C-36,74,-57,66,-69,50C-81,34,-84,10,-80,-12C-76,-34,-65,-54,-49,-64C-33,-74,-16,-74,1,-75C19,-76,38,-70,45,-60Z" transform="translate(100 100)" />
+                </svg>
+            </div>
+
+            <!-- Application Multi-Step Form Card -->
+            <form id="consult-form" onsubmit="handleFormSubmit(event)" class="bg-white rounded-2xl p-5 sm:p-7 border border-gray-100 card-shadow space-y-8">
+                
+                <!-- STEP 1: 학생 기본 정보 (학번 / 이름 2개 칸 구성) -->
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-2 border-b border-gray-100 pb-3">
+                        <span class="bg-brand-blue text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                        <h3 class="text-base sm:text-lg font-bold text-gray-800">학생 정보 입력</h3>
+                        <span class="text-xs text-gray-400 font-normal ml-auto">* 최초 입력 후 자동 저장됩니다.</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">학번 (5자리)</label>
+                            <input type="text" id="stu-student-id" placeholder="예: 30101" maxlength="5" required pattern="[1-3][0-9]{4}" title="5자리 학번(예: 30101)을 입력해주세요" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue font-semibold tracking-wide">
+                            <p class="text-[10px] text-gray-400 mt-1">예: 3학년 1반 1번 → 30101</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">이름</label>
+                            <input type="text" id="stu-name" placeholder="홍길동" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue font-semibold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">연락처 (휴대전화)</label>
+                            <input type="tel" id="stu-phone" placeholder="010-0000-0000" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2: 상담 분야 선택 -->
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-2 border-b border-gray-100 pb-3">
+                        <span class="bg-brand-blue text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                        <h3 class="text-base sm:text-lg font-bold text-gray-800">상담 희망 분야</h3>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3" id="category-selector">
+                        <!-- Category Options (Interactive Tiles) -->
+                        <div onclick="selectCategory('진학탐색', this)" class="category-tile border-2 border-brand-blue bg-blue-50/50 rounded-2xl p-4 text-center cursor-pointer touch-scale flex flex-col items-center justify-center space-y-2">
+                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-brand-blue text-xl">🎓</div>
+                            <span class="text-xs sm:text-sm font-bold text-gray-800">고교 진학</span>
+                            <span class="text-[10px] text-gray-500">일반고/특목고/특성화고</span>
+                        </div>
+                        <div onclick="selectCategory('적성흥미', this)" class="category-tile border-2 border-gray-100 hover:border-blue-200 rounded-2xl p-4 text-center cursor-pointer touch-scale flex flex-col items-center justify-center space-y-2">
+                            <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-xl">🔍</div>
+                            <span class="text-xs sm:text-sm font-bold text-gray-800">적성 및 흥미</span>
+                            <span class="text-[10px] text-gray-500">성격검사/진로진단</span>
+                        </div>
+                        <div onclick="selectCategory('학업성적', this)" class="category-tile border-2 border-gray-100 hover:border-blue-200 rounded-2xl p-4 text-center cursor-pointer touch-scale flex flex-col items-center justify-center space-y-2">
+                            <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 text-xl">📚</div>
+                            <span class="text-xs sm:text-sm font-bold text-gray-800">학업 및 공부</span>
+                            <span class="text-[10px] text-gray-500">성적/학습 습관</span>
+                        </div>
+                        <div onclick="selectCategory('직업정보', this)" class="category-tile border-2 border-gray-100 hover:border-blue-200 rounded-2xl p-4 text-center cursor-pointer touch-scale flex flex-col items-center justify-center space-y-2">
+                            <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-xl">💼</div>
+                            <span class="text-xs sm:text-sm font-bold text-gray-800">직업 정보</span>
+                            <span class="text-[10px] text-gray-500">미래 직업/학과 정보</span>
+                        </div>
+                        <div onclick="selectCategory('기타고민', this)" class="category-tile border-2 border-gray-100 hover:border-blue-200 rounded-2xl p-4 text-center cursor-pointer touch-scale flex flex-col items-center justify-center space-y-2 col-span-2 sm:col-span-1">
+                            <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 text-xl">💬</div>
+                            <span class="text-xs sm:text-sm font-bold text-gray-800">기타 고민</span>
+                            <span class="text-[10px] text-gray-500">학교생활/친구관계 등</span>
+                        </div>
+                    </div>
+                    <input type="hidden" id="selected-category" value="진학탐색">
+
+                    <!-- Consultation Type Choice -->
+                    <div class="pt-2">
+                        <label class="block text-xs font-semibold text-gray-600 mb-2">상담 형태</label>
+                        <div class="flex flex-wrap gap-2">
+                            <label class="flex-1 min-w-[120px] flex items-center justify-center p-2.5 border rounded-xl cursor-pointer text-xs font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all has-[:checked]:bg-brand-lightblue has-[:checked]:border-brand-blue has-[:checked]:text-brand-blue">
+                                <input type="radio" name="consult-type" value="1:1 개인상담" checked class="hidden">
+                                <span>👤 1:1 개인상담</span>
+                            </label>
+                            <label class="flex-1 min-w-[120px] flex items-center justify-center p-2.5 border rounded-xl cursor-pointer text-xs font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all has-[:checked]:bg-brand-lightblue has-[:checked]:border-brand-blue has-[:checked]:text-brand-blue">
+                                <input type="radio" name="consult-type" value="그룹상담(친구동반)" class="hidden">
+                                <span>👥 친구와 함께 그룹</span>
+                            </label>
+                            <label class="flex-1 min-w-[120px] flex items-center justify-center p-2.5 border rounded-xl cursor-pointer text-xs font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all has-[:checked]:bg-brand-lightblue has-[:checked]:border-brand-blue has-[:checked]:text-brand-blue">
+                                <input type="radio" name="consult-type" value="점심시간 간이상담" class="hidden">
+                                <span>🥪 점심시간 간이</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3: 희망 날짜 및 시간 선택 -->
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-2 border-b border-gray-100 pb-3">
+                        <span class="bg-brand-blue text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                        <h3 class="text-base sm:text-lg font-bold text-gray-800">상담 희망 일시</h3>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Date Picker -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">상담 날짜 선택</label>
+                            <input type="date" id="consult-date" required onchange="renderTimeSlots()" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                            <p class="text-[11px] text-gray-400 mt-1">* 토/일요일 및 지난 날짜는 선택할 수 없습니다.</p>
+                        </div>
+
+                        <!-- Time Slots Grid -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">희망 시간대 (교시/쉬는시간)</label>
+                            <div id="time-slots-container" class="grid grid-cols-2 gap-2">
+                                <!-- Slots generated dynamically via JS -->
+                            </div>
+                            <input type="hidden" id="selected-timeslot" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 4: 사전 질문 및 고민 작성 -->
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-2 border-b border-gray-100 pb-3">
+                        <span class="bg-brand-blue text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">4</span>
+                        <h3 class="text-base sm:text-lg font-bold text-gray-800">사전 질문 및 고민거리</h3>
+                    </div>
+
+                    <div>
+                        <textarea id="consult-question" rows="4" maxlength="500" oninput="updateCharCount(this)" required placeholder="진로 선생님께 이야기 나누고 싶은 고민이나 궁금한 내용, 알고 싶은 정보 등을 자유롭게 작성해 주세요." class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue"></textarea>
+                        <div class="flex justify-between items-center text-xs text-gray-400 mt-1">
+                            <span>진로 선생님만 확인할 수 있으니 솔직하게 적어주세요.</span>
+                            <span id="char-counter">0 / 500자</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-brand-blue hover:bg-brand-darkblue text-white font-bold py-4 rounded-xl text-base shadow-lg transition-all touch-scale flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>진로상담 신청하기</span>
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- ==================== TAB 2: 내 예약 확인 화면 ==================== -->
+        <section id="tab-status" class="space-y-6 hidden">
+            <div class="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 card-shadow">
+                <div class="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900">내 상담 신청 내역</h2>
+                        <p class="text-xs text-gray-500">신청하신 상담의 승인 상태 및 일정을 확인하세요.</p>
+                    </div>
+                    <button onclick="renderStudentStatus()" class="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-200">
+                        <i class="fa-solid fa-arrows-rotate mr-1"></i>새로고침
+                    </button>
+                </div>
+
+                <!-- Reservation List Container -->
+                <div id="student-reservation-list" class="space-y-4">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 3: 관리자(진로교사) 대시보드 ==================== -->
+        <section id="tab-admin" class="space-y-6 hidden">
+            
+            <!-- ADMIN LOGIN GATE -->
+            <div id="admin-login-card" class="bg-white rounded-2xl p-8 border border-gray-100 card-shadow max-w-md mx-auto text-center space-y-4 my-10">
+                <div class="w-16 h-16 bg-blue-100 text-brand-blue rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h2 class="text-xl font-bold text-gray-900">진로교사 관리자 인증</h2>
+                <p class="text-xs text-gray-500">학생 상담 예약을 관리하기 위해 PIN 번호를 입력해 주세요. (기본 PIN: 1234)</p>
+                <div class="pt-2">
+                    <input type="password" id="admin-pin-input" placeholder="PIN 번호 입력" class="w-full text-center tracking-widest text-lg font-bold bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                </div>
+                <button onclick="verifyAdminPin()" class="w-full bg-brand-blue hover:bg-brand-darkblue text-white font-bold py-3 rounded-xl transition-all touch-scale">
+                    접속하기
+                </button>
+            </div>
+
+            <!-- ADMIN DASHBOARD PANEL (Hidden until authenticated) -->
+            <div id="admin-panel" class="space-y-6 hidden">
+                
+                <!-- Top Summary Cards -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="bg-white p-4 rounded-2xl border border-gray-100 card-shadow flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-100 text-brand-blue flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-calendar-day"></i>
+                        </div>
+                        <div>
+                            <p class="text-[11px] text-gray-500 font-semibold">오늘의 상담</p>
+                            <p id="stat-today" class="text-lg font-extrabold text-gray-900">0건</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-gray-100 card-shadow flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-clock"></i>
+                        </div>
+                        <div>
+                            <p class="text-[11px] text-gray-500 font-semibold">승인 대기</p>
+                            <p id="stat-pending" class="text-lg font-extrabold text-amber-600">0건</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-gray-100 card-shadow flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                        <div>
+                            <p class="text-[11px] text-gray-500 font-semibold">상담 완료</p>
+                            <p id="stat-completed" class="text-lg font-extrabold text-gray-900">0건</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-gray-100 card-shadow flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <div>
+                            <p class="text-[11px] text-gray-500 font-semibold">전체 신청</p>
+                            <p id="stat-total" class="text-lg font-extrabold text-gray-900">0건</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Action Buttons & Filters -->
+                <div class="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 card-shadow space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <!-- Sub Tabs -->
+                        <div class="flex space-x-1 bg-gray-100 p-1 rounded-xl text-xs font-semibold">
+                            <button id="admin-subtab-list" onclick="switchAdminSubtab('list')" class="px-3 py-1.5 rounded-lg bg-white text-brand-blue shadow-sm">상담 신청 목록</button>
+                            <button id="admin-subtab-slots" onclick="switchAdminSubtab('slots')" class="px-3 py-1.5 rounded-lg text-gray-600">상담 가능 시간 설정</button>
+                        </div>
+
+                        <!-- Export / Backup Tools -->
+                        <div class="flex items-center space-x-2">
+                            <button onclick="exportToCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-2 rounded-xl font-semibold flex items-center gap-1.5 transition-all">
+                                <i class="fa-solid fa-file-excel"></i> CSV 내보내기
+                            </button>
+                            <button onclick="clearAllData()" class="bg-gray-100 hover:bg-red-50 text-gray-600 hover:text-red-600 text-xs px-3 py-2 rounded-xl font-semibold flex items-center gap-1 transition-all">
+                                <i class="fa-solid fa-trash-can"></i> 초기화
+                            </button>
+                            <button onclick="adminLogout()" class="bg-gray-200 text-gray-700 text-xs px-2.5 py-2 rounded-xl hover:bg-gray-300">
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ADMIN SUBSECTION 1: LIST -->
+                    <div id="admin-sub-list" class="space-y-4 pt-2">
+                        <!-- Filter Bar -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <select id="filter-grade" onchange="renderAdminList()" class="bg-gray-50 border border-gray-200 rounded-xl p-2 text-xs font-medium">
+                                <option value="all">전체 학년</option>
+                                <option value="1">1학년</option>
+                                <option value="2">2학년</option>
+                                <option value="3">3학년</option>
+                            </select>
+                            <select id="filter-status" onchange="renderAdminList()" class="bg-gray-50 border border-gray-200 rounded-xl p-2 text-xs font-medium">
+                                <option value="all">전체 상태</option>
+                                <option value="pending">대기중</option>
+                                <option value="approved">승인완료</option>
+                                <option value="rejected">시간조정요청</option>
+                                <option value="completed">상담완료</option>
+                            </select>
+                            <input type="text" id="filter-search" oninput="renderAdminList()" placeholder="학번 또는 이름 검색..." class="col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-2 text-xs">
+                        </div>
+
+                        <!-- Consultation Requests List Container -->
+                        <div id="admin-requests-list" class="space-y-3">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+
+                    <!-- ADMIN SUBSECTION 2: TIME SLOTS SETTING -->
+                    <div id="admin-sub-slots" class="space-y-4 pt-2 hidden">
+                        <div class="bg-blue-50 p-3 rounded-xl text-xs text-brand-darkblue flex items-center gap-2">
+                            <i class="fa-solid fa-circle-info text-base"></i>
+                            <span>학생들이 신청할 수 있는 상담 교시 및 시간대를 활성화/비활성화할 수 있습니다.</span>
+                        </div>
+                        <div id="slot-management-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <!-- Toggle Swtiches generated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-6 mt-12 text-center text-xs text-gray-500 space-y-1">
+        <p class="font-medium text-gray-600">금촌중학교 진로진학상담실 (Geumchon Career Hub)</p>
+        <p>경기도 파주시 아동로 13 금촌중학교 | TEL: 031-940-0000</p>
+        <p class="text-[10px] text-gray-400">© Geumchon Middle School. All Rights Reserved.</p>
+    </footer>
+
+    <!-- Teacher Note Modal -->
+    <div id="note-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 card-shadow relative">
+            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+                <i class="fa-solid fa-user-pen text-brand-blue"></i> 교사 전용 상담 기록 / 메모
+            </h3>
+            <p class="text-xs text-gray-500">학생에게는 노출되지 않는 교사 전용 관찰 및 상담 결과 기록입니다.</p>
+            <input type="hidden" id="note-item-id">
+            <textarea id="note-text" rows="5" placeholder="상담 지도 사항, 특이사항, 생기부 기록용 참고 메모를 적어주세요." class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue"></textarea>
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeNoteModal()" class="px-4 py-2 bg-gray-100 text-gray-600 text-xs font-semibold rounded-xl hover:bg-gray-200">취소</button>
+                <button onclick="saveTeacherNote()" class="px-4 py-2 bg-brand-blue text-white text-xs font-semibold rounded-xl hover:bg-brand-darkblue">저장하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review / Reflection Writing Modal for Students -->
+    <div id="review-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 card-shadow relative">
+            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+                <i class="fa-solid fa-pen-nib text-emerald-600"></i> 상담 후기 및 다짐 작성
+            </h3>
+            <p class="text-xs text-gray-500">상담을 마친 후 새롭게 깨달은 점이나 앞으로의 진로 계획/다짐을 남겨주세요.</p>
+            <input type="hidden" id="review-item-id">
+            <textarea id="review-text" rows="5" placeholder="오늘 상담을 통해 도움이 되었던 점, 앞으로 실천할 나의 다짐을 적어보세요." class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue"></textarea>
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeReviewModal()" class="px-4 py-2 bg-gray-100 text-gray-600 text-xs font-semibold rounded-xl hover:bg-gray-200">취소</button>
+                <button onclick="saveStudentReview()" class="px-4 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-xl hover:bg-emerald-700">작성 완료</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Message -->
+    <div id="toast-msg" class="fixed bottom-5 right-5 z-50 bg-gray-900 text-white px-4 py-3 rounded-2xl shadow-xl text-xs font-medium flex items-center space-x-2 transition-all transform translate-y-10 opacity-0 pointer-events-none">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+        <span id="toast-text">처리가 완료되었습니다.</span>
+    </div>
+
+    <!-- MAIN JAVASCRIPT APP LOGIC -->
+    <script>
+        // Default Time Slots Configuration
+        const DEFAULT_SLOTS = [
+            { id: 'slot-1', name: '08:30~08:50 (아침자율시간)', enabled: true },
+            { id: 'slot-2', name: '2교시 쉬는시간 (10:35~10:45)', enabled: true },
+            { id: 'slot-3', name: '3교시 쉬는시간 (11:35~11:45)', enabled: true },
+            { id: 'slot-4', name: '점심시간 A (12:35~13:05)', enabled: true },
+            { id: 'slot-5', name: '점심시간 B (13:05~13:35)', enabled: true },
+            { id: 'slot-6', name: '방과후 A (15:30~16:10)', enabled: true },
+            { id: 'slot-7', name: '방과후 B (16:10~16:50)', enabled: true }
+        ];
+
+        // Global State Keys
+        const STORAGE_KEY_LIST = 'geumchon_consultation_list_v2';
+        const STORAGE_KEY_SLOTS = 'geumchon_app_slots_v2';
+        const STORAGE_KEY_STU = 'geumchon_student_info_v2';
+        const DEFAULT_ADMIN_PIN = "1234";
+
+        let consultations = [];
+        let availableSlots = [];
+        let isAdminLoggedIn = false;
+
+        // Helper: Parse 5-digit student ID (e.g. 30101 -> Grade:3, Class:1, Number:1)
+        function parseStudentId(studentId) {
+            if (!studentId || studentId.length < 5) return { grade: '1', classNum: '1', number: '1' };
+            const grade = studentId.substring(0, 1);
+            const classNum = parseInt(studentId.substring(1, 3), 10).toString();
+            const number = parseInt(studentId.substring(3, 5), 10).toString();
+            return { grade, classNum, number };
+        }
+
+        // On Page Load Initialization
+        window.onload = function() {
+            loadInitialData();
+            setupDatePickerConstraints();
+            loadSavedStudentInfo();
+            renderTimeSlots();
+            renderSlotManagementGrid();
+            updateMyReservationBadge();
+        };
+
+        // Load or Initialize LocalStorage Data
+        function loadInitialData() {
+            const rawList = localStorage.getItem(STORAGE_KEY_LIST);
+            consultations = rawList ? JSON.parse(rawList) : getSampleData();
+
+            const rawSlots = localStorage.getItem(STORAGE_KEY_SLOTS);
+            availableSlots = rawSlots ? JSON.parse(rawSlots) : DEFAULT_SLOTS;
+
+            saveData();
+        }
+
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY_LIST, JSON.stringify(consultations));
+            localStorage.setItem(STORAGE_KEY_SLOTS, JSON.stringify(availableSlots));
+        }
+
+        // Mock Seed Data for Demonstration
+        function getSampleData() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            return [
+                {
+                    id: '1',
+                    studentInfo: { studentId: '30214', grade: '3', classNum: '2', number: '14', name: '홍길동', phone: '010-1234-5678' },
+                    category: '진학탐색',
+                    type: '1:1 개인상담',
+                    date: todayStr,
+                    timeSlot: '점심시간 A (12:35~13:05)',
+                    question: 'IT특성화고등학교 진학과 일반고 이과 중 진로 방향에 고민이 있습니다.',
+                    status: 'approved',
+                    teacherNote: '컴퓨터 소프트웨어에 높은 흥미를 보임. 성적 분석 후 특성화고 준비사항 안내함.',
+                    review: '',
+                    createdAt: new Date().toISOString()
+                },
+                {
+                    id: '2',
+                    studentInfo: { studentId: '20521', grade: '2', classNum: '5', number: '21', name: '이지원', phone: '010-9876-5432' },
+                    category: '적성흥미',
+                    type: '그룹상담(친구동반)',
+                    date: todayStr,
+                    timeSlot: '방과후 A (15:30~16:10)',
+                    question: '친구와 함께 어떤 직업군이 성향에 맞는지 적성검사를 받아보고 싶습니다.',
+                    status: 'pending',
+                    teacherNote: '',
+                    review: '',
+                    createdAt: new Date().toISOString()
+                }
+            ];
+        }
+
+        // Set Date Picker constraints (Disable past dates & weekends visually)
+        function setupDatePickerConstraints() {
+            const dateInput = document.getElementById('consult-date');
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            
+            dateInput.min = `${year}-${month}-${day}`;
+            dateInput.value = `${year}-${month}-${day}`;
+        }
+
+        // Auto Load saved student personal info from LocalStorage
+        function loadSavedStudentInfo() {
+            const saved = localStorage.getItem(STORAGE_KEY_STU);
+            if (saved) {
+                const info = JSON.parse(saved);
+                document.getElementById('stu-student-id').value = info.studentId || '';
+                document.getElementById('stu-name').value = info.name || '';
+                document.getElementById('stu-phone').value = info.phone || '';
+            }
+        }
+
+        function saveStudentInfoLocal() {
+            const studentId = document.getElementById('stu-student-id').value.trim();
+            const info = {
+                studentId: studentId,
+                name: document.getElementById('stu-name').value.trim(),
+                phone: document.getElementById('stu-phone').value.trim()
+            };
+            localStorage.setItem(STORAGE_KEY_STU, JSON.stringify(info));
+        }
+
+        // Render Time Slot Radio Buttons for Student Application
+        function renderTimeSlots() {
+            const container = document.getElementById('time-slots-container');
+            container.innerHTML = '';
+
+            const selectedDateVal = document.getElementById('consult-date').value;
+            const dateObj = new Date(selectedDateVal);
+            const isWeekend = (dateObj.getDay() === 0 || dateObj.getDay() === 6);
+
+            if (isWeekend) {
+                container.innerHTML = `<div class="col-span-2 text-center py-4 bg-red-50 text-red-500 rounded-xl text-xs font-semibold">주말(토/일)은 상담이 진행되지 않습니다. 평일을 선택해주세요.</div>`;
+                document.getElementById('selected-timeslot').value = '';
+                return;
+            }
+
+            const activeSlots = availableSlots.filter(s => s.enabled);
+
+            if (activeSlots.length === 0) {
+                container.innerHTML = `<div class="col-span-2 text-center py-4 bg-gray-100 text-gray-500 rounded-xl text-xs">선택 가능한 상담 시간이 없습니다.</div>`;
+                return;
+            }
+
+            activeSlots.forEach((slot, index) => {
+                const isFirst = (index === 0);
+                const isChecked = isFirst ? 'checked' : '';
+                if (isFirst) document.getElementById('selected-timeslot').value = slot.name;
+
+                const tileHtml = `
+                    <label class="flex items-center space-x-2 p-3 border border-gray-200 rounded-xl cursor-pointer text-xs font-medium bg-gray-50 hover:bg-blue-50/50 transition-all has-[:checked]:bg-brand-lightblue has-[:checked]:border-brand-blue has-[:checked]:text-brand-blue">
+                        <input type="radio" name="timeslot-radio" value="${slot.name}" ${isChecked} onchange="document.getElementById('selected-timeslot').value='${slot.name}'" class="accent-brand-blue">
+                        <span class="truncate">${slot.name}</span>
+                    </label>
+                `;
+                container.insertAdjacentHTML('beforeend', tileHtml);
+            });
+        }
+
+        // Category Selection Visual Handler
+        function selectCategory(categoryName, element) {
+            document.getElementById('selected-category').value = categoryName;
+            const tiles = document.querySelectorAll('.category-tile');
+            tiles.forEach(t => {
+                t.classList.remove('border-brand-blue', 'bg-blue-50/50');
+                t.classList.add('border-gray-100');
+            });
+            element.classList.remove('border-gray-100');
+            element.classList.add('border-brand-blue', 'bg-blue-50/50');
+        }
+
+        // Character Counter for Textarea
+        function updateCharCount(textarea) {
+            document.getElementById('char-counter').innerText = `${textarea.value.length} / 500자`;
+        }
+
+        // Handle Application Form Submit
+        function handleFormSubmit(event) {
+            event.preventDefault();
+
+            const timeslotVal = document.getElementById('selected-timeslot').value;
+            if (!timeslotVal) {
+                showToast('상담 가능 시간을 선택해 주세요.', 'error');
+                return;
+            }
+
+            const studentId = document.getElementById('stu-student-id').value.trim();
+            if (!/^[1-3][0-9]{4}$/.test(studentId)) {
+                showToast('올바른 5자리 학번(예: 30101)을 입력해주세요.', 'error');
+                return;
+            }
+
+            saveStudentInfoLocal();
+
+            const parsed = parseStudentId(studentId);
+
+            const newConsultation = {
+                id: Date.now().toString(),
+                studentInfo: {
+                    studentId: studentId,
+                    grade: parsed.grade,
+                    classNum: parsed.classNum,
+                    number: parsed.number,
+                    name: document.getElementById('stu-name').value.trim(),
+                    phone: document.getElementById('stu-phone').value.trim()
+                },
+                category: document.getElementById('selected-category').value,
+                type: document.querySelector('input[name="consult-type"]:checked').value,
+                date: document.getElementById('consult-date').value,
+                timeSlot: timeslotVal,
+                question: document.getElementById('consult-question').value,
+                status: 'pending',
+                teacherNote: '',
+                review: '',
+                createdAt: new Date().toISOString()
+            };
+
+            consultations.unshift(newConsultation);
+            saveData();
+
+            // Confetti Explosion FX
+            try {
+                confetti({
+                    particleCount: 80,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            } catch(e){}
+
+            showToast('진로상담 신청이 완료되었습니다!', 'success');
+            document.getElementById('consult-question').value = '';
+            updateCharCount(document.getElementById('consult-question'));
+
+            updateMyReservationBadge();
+            
+            // Auto switch to My Reservation Status tab
+            setTimeout(() => {
+                switchTab('status');
+            }, 1000);
+        }
+
+        // Switch Top Main Tabs
+        function switchTab(tabName) {
+            document.getElementById('tab-apply').classList.add('hidden');
+            document.getElementById('tab-status').classList.add('hidden');
+            document.getElementById('tab-admin').classList.add('hidden');
+
+            document.getElementById('nav-apply').classList.remove('active-tab', 'bg-white', 'shadow-sm');
+            document.getElementById('nav-status').classList.remove('active-tab', 'bg-white', 'shadow-sm');
+            document.getElementById('nav-admin').classList.remove('active-tab', 'bg-white', 'shadow-sm');
+
+            if (tabName === 'apply') {
+                document.getElementById('tab-apply').classList.remove('hidden');
+                document.getElementById('nav-apply').classList.add('active-tab', 'bg-white', 'shadow-sm');
+            } else if (tabName === 'status') {
+                document.getElementById('tab-status').classList.remove('hidden');
+                document.getElementById('nav-status').classList.add('active-tab', 'bg-white', 'shadow-sm');
+                renderStudentStatus();
+            } else if (tabName === 'admin') {
+                document.getElementById('tab-admin').classList.remove('hidden');
+                document.getElementById('nav-admin').classList.add('active-tab', 'bg-white', 'shadow-sm');
+                if (isAdminLoggedIn) {
+                    renderAdminDashboard();
+                }
+            }
+        }
+
+        // Render Student Reservation Cards (Tab 2)
+        function renderStudentStatus() {
+            const container = document.getElementById('student-reservation-list');
+            container.innerHTML = '';
+
+            const savedStuInfo = localStorage.getItem(STORAGE_KEY_STU);
+            if (!savedStuInfo) {
+                container.innerHTML = `<div class="text-center py-10 text-gray-400 text-sm">신청한 상담 내역이 없습니다. 먼저 상담을 신청해주세요.</div>`;
+                return;
+            }
+
+            const currentStudent = JSON.parse(savedStuInfo);
+            // Filter list matching student ID and name
+            const myRequests = consultations.filter(c => 
+                c.studentInfo.studentId === currentStudent.studentId && 
+                c.studentInfo.name === currentStudent.name
+            );
+
+            if (myRequests.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                        <i class="fa-solid fa-folder-open text-gray-300 text-3xl mb-2"></i>
+                        <p class="text-sm font-semibold text-gray-600">등록된 상담 신청 내역이 없습니다.</p>
+                        <p class="text-xs text-gray-400 mt-1">상담 신청 탭에서 진로상담을 등록해 보세요!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            myRequests.forEach(item => {
+                const statusBadge = getStatusBadgeHtml(item.status);
+                
+                const cardHtml = `
+                    <div class="border border-gray-100 rounded-2xl p-5 bg-white card-shadow space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-brand-blue bg-blue-50 px-2.5 py-1 rounded-full">${item.category} • ${item.type}</span>
+                            ${statusBadge}
+                        </div>
+                        
+                        <div class="text-sm font-bold text-gray-800 space-y-1">
+                            <div class="flex items-center space-x-2 text-gray-700">
+                                <i class="fa-regular fa-calendar text-brand-blue"></i>
+                                <span>${item.date} (${item.timeSlot})</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-xl p-3 text-xs text-gray-600">
+                            <p class="font-semibold text-gray-700 mb-1">고민 내역:</p>
+                            <p class="whitespace-pre-wrap">${escapeHtml(item.question)}</p>
+                        </div>
+
+                        ${item.review ? `
+                            <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-xs text-emerald-800">
+                                <p class="font-bold mb-1 flex items-center gap-1"><i class="fa-solid fa-heart"></i> 내가 남긴 상담 소감:</p>
+                                <p class="whitespace-pre-wrap">${escapeHtml(item.review)}</p>
+                            </div>
+                        ` : ''}
+
+                        <!-- Action Buttons based on Status -->
+                        <div class="flex items-center justify-end space-x-2 pt-2 border-t border-gray-100">
+                            ${item.status === 'pending' || item.status === 'rejected' ? `
+                                <button onclick="cancelConsultation('${item.id}')" class="text-xs bg-red-50 text-red-600 hover:bg-red-100 font-semibold px-3 py-1.5 rounded-lg transition-all">
+                                    신청 취소
+                                </button>
+                            ` : ''}
+
+                            ${item.status === 'completed' && !item.review ? `
+                                <button onclick="openReviewModal('${item.id}')" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1">
+                                    <i class="fa-solid fa-pen"></i> 상담 후기 쓰기
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', cardHtml);
+            });
+        }
+
+        // Status Badge Helper
+        function getStatusBadgeHtml(status) {
+            switch (status) {
+                case 'pending':
+                    return `<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-spinner fa-spin mr-1"></i>승인 대기중</span>`;
+                case 'approved':
+                    return `<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-circle-check mr-1"></i>상담 확정</span>`;
+                case 'rejected':
+                    return `<span class="bg-orange-100 text-orange-700 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-triangle-exclamation mr-1"></i>일정 조정 필요</span>`;
+                case 'completed':
+                    return `<span class="bg-blue-100 text-brand-blue text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-flag-checkered mr-1"></i>상담 완료</span>`;
+                default:
+                    return '';
+            }
+        }
+
+        // Cancel Student Request
+        function cancelConsultation(id) {
+            if (confirm('정말로 이 상담 신청을 취소하시겠습니까?')) {
+                consultations = consultations.filter(c => c.id !== id);
+                saveData();
+                showToast('상담 신청이 취소되었습니다.');
+                renderStudentStatus();
+                updateMyReservationBadge();
+            }
+        }
+
+        // Badge counter for student tab
+        function updateMyReservationBadge() {
+            const savedStuInfo = localStorage.getItem(STORAGE_KEY_STU);
+            if (!savedStuInfo) return;
+            const currentStudent = JSON.parse(savedStuInfo);
+
+            const count = consultations.filter(c => 
+                c.studentInfo.studentId === currentStudent.studentId && 
+                c.studentInfo.name === currentStudent.name
+            ).length;
+
+            const badge = document.getElementById('my-badge');
+            if (count > 0) {
+                badge.innerText = count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // ==================== ADMIN / TEACHER LOGIC ====================
+
+        function verifyAdminPin() {
+            const pinInput = document.getElementById('admin-pin-input').value;
+            if (pinInput === DEFAULT_ADMIN_PIN) {
+                isAdminLoggedIn = true;
+                document.getElementById('admin-login-card').classList.add('hidden');
+                document.getElementById('admin-panel').classList.remove('hidden');
+                renderAdminDashboard();
+                showToast('관리자 모드로 접속하였습니다.');
+            } else {
+                showToast('PIN 번호가 일치하지 않습니다. (기본: 1234)', 'error');
+            }
+        }
+
+        function adminLogout() {
+            isAdminLoggedIn = false;
+            document.getElementById('admin-login-card').classList.remove('hidden');
+            document.getElementById('admin-panel').classList.add('hidden');
+            document.getElementById('admin-pin-input').value = '';
+            showToast('관리자 모드에서 로그아웃되었습니다.');
+        }
+
+        function renderAdminDashboard() {
+            updateAdminStats();
+            renderAdminList();
+        }
+
+        function updateAdminStats() {
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            const todayCount = consultations.filter(c => c.date === todayStr).length;
+            const pendingCount = consultations.filter(c => c.status === 'pending').length;
+            const completedCount = consultations.filter(c => c.status === 'completed').length;
+
+            document.getElementById('stat-today').innerText = `${todayCount}건`;
+            document.getElementById('stat-pending').innerText = `${pendingCount}건`;
+            document.getElementById('stat-completed').innerText = `${completedCount}건`;
+            document.getElementById('stat-total').innerText = `${consultations.length}건`;
+        }
+
+        function switchAdminSubtab(tab) {
+            const listBtn = document.getElementById('admin-subtab-list');
+            const slotsBtn = document.getElementById('admin-subtab-slots');
+            const listSec = document.getElementById('admin-sub-list');
+            const slotsSec = document.getElementById('admin-sub-slots');
+
+            if (tab === 'list') {
+                listBtn.className = "px-3 py-1.5 rounded-lg bg-white text-brand-blue shadow-sm font-semibold";
+                slotsBtn.className = "px-3 py-1.5 rounded-lg text-gray-600 font-semibold";
+                listSec.classList.remove('hidden');
+                slotsSec.classList.add('hidden');
+            } else {
+                slotsBtn.className = "px-3 py-1.5 rounded-lg bg-white text-brand-blue shadow-sm font-semibold";
+                listBtn.className = "px-3 py-1.5 rounded-lg text-gray-600 font-semibold";
+                slotsSec.classList.remove('hidden');
+                listSec.classList.add('hidden');
+            }
+        }
+
+        function renderAdminList() {
+            const container = document.getElementById('admin-requests-list');
+            container.innerHTML = '';
+
+            const gradeFilter = document.getElementById('filter-grade').value;
+            const statusFilter = document.getElementById('filter-status').value;
+            const searchQuery = document.getElementById('filter-search').value.trim().toLowerCase();
+
+            let filtered = consultations.filter(c => {
+                const matchGrade = (gradeFilter === 'all' || c.studentInfo.grade === gradeFilter);
+                const matchStatus = (statusFilter === 'all' || c.status === statusFilter);
+                
+                const nameMatch = c.studentInfo.name.toLowerCase().includes(searchQuery);
+                const idMatch = (c.studentInfo.studentId || '').includes(searchQuery);
+                const matchSearch = nameMatch || idMatch;
+
+                return matchGrade && matchStatus && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="text-center py-10 text-gray-400 text-xs">조건에 해당하는 상담 신청 건이 없습니다.</div>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const cardHtml = `
+                    <div class="border border-gray-200 rounded-2xl p-4 bg-white space-y-3 hover:border-blue-200 transition-all">
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-2">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs bg-gray-100 text-gray-700 font-bold px-2 py-1 rounded-lg">${item.studentInfo.studentId || (item.studentInfo.grade + '0' + item.studentInfo.classNum + item.studentInfo.number)}</span>
+                                <span class="text-sm font-extrabold text-gray-900">${escapeHtml(item.studentInfo.name)}</span>
+                                <span class="text-xs text-gray-500">(${item.studentInfo.phone})</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs bg-blue-50 text-brand-blue font-bold px-2 py-0.5 rounded-md">${item.category}</span>
+                                ${getStatusBadgeHtml(item.status)}
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600">
+                            <div><i class="fa-regular fa-calendar-check text-brand-blue mr-1"></i><strong>희망일시:</strong> ${item.date} (${item.timeSlot})</div>
+                            <div><i class="fa-solid fa-users text-gray-400 mr-1"></i><strong>상담형태:</strong> ${item.type}</div>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-xl p-3 text-xs text-gray-700">
+                            <p class="font-bold text-gray-800 mb-0.5">사전 질문/고민:</p>
+                            <p class="whitespace-pre-wrap">${escapeHtml(item.question)}</p>
+                        </div>
+
+                        ${item.teacherNote ? `
+                            <div class="bg-blue-50 border border-blue-100 rounded-xl p-2.5 text-xs text-brand-darkblue flex items-start justify-between">
+                                <div>
+                                    <strong class="font-bold"><i class="fa-solid fa-user-pen mr-1"></i>교사 메모:</strong>
+                                    <p class="mt-0.5 whitespace-pre-wrap">${escapeHtml(item.teacherNote)}</p>
+                                </div>
+                                <button onclick="openNoteModal('${item.id}')" class="text-[10px] text-brand-blue underline ml-2 shrink-0">수정</button>
+                            </div>
+                        ` : ''}
+
+                        <!-- Action Bar for Teacher -->
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-100">
+                            <button onclick="openNoteModal('${item.id}')" class="text-xs text-gray-600 hover:text-brand-blue font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-square-plus"></i> ${item.teacherNote ? '메모 수정' : '교사 메모 추가'}
+                            </button>
+
+                            <div class="flex items-center space-x-1">
+                                <button onclick="updateStatus('${item.id}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all">
+                                    승인
+                                </button>
+                                <button onclick="updateStatus('${item.id}', 'rejected')" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all">
+                                    시간조정
+                                </button>
+                                <button onclick="updateStatus('${item.id}', 'completed')" class="bg-brand-blue hover:bg-brand-darkblue text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all">
+                                    상담완료
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', cardHtml);
+            });
+        }
+
+        function updateStatus(id, newStatus) {
+            const item = consultations.find(c => c.id === id);
+            if (item) {
+                item.status = newStatus;
+                saveData();
+                updateAdminStats();
+                renderAdminList();
+                showToast('상담 상태가 변경되었습니다.');
+            }
+        }
+
+        // Teacher Note Modal Handlers
+        function openNoteModal(id) {
+            const item = consultations.find(c => c.id === id);
+            if (item) {
+                document.getElementById('note-item-id').value = id;
+                document.getElementById('note-text').value = item.teacherNote || '';
+                document.getElementById('note-modal').classList.remove('hidden');
+            }
+        }
+
+        function closeNoteModal() {
+            document.getElementById('note-modal').classList.add('hidden');
+        }
+
+        function saveTeacherNote() {
+            const id = document.getElementById('note-item-id').value;
+            const text = document.getElementById('note-text').value.trim();
+
+            const item = consultations.find(c => c.id === id);
+            if (item) {
+                item.teacherNote = text;
+                saveData();
+                renderAdminList();
+                closeNoteModal();
+                showToast('교사 메모가 저장되었습니다.');
+            }
+        }
+
+        // Student Review Modal Handlers
+        function openReviewModal(id) {
+            const item = consultations.find(c => c.id === id);
+            if (item) {
+                document.getElementById('review-item-id').value = id;
+                document.getElementById('review-text').value = item.review || '';
+                document.getElementById('review-modal').classList.remove('hidden');
+            }
+        }
+
+        function closeReviewModal() {
+            document.getElementById('review-modal').classList.add('hidden');
+        }
+
+        function saveStudentReview() {
+            const id = document.getElementById('review-item-id').value;
+            const text = document.getElementById('review-text').value.trim();
+
+            const item = consultations.find(c => c.id === id);
+            if (item) {
+                item.review = text;
+                saveData();
+                renderStudentStatus();
+                closeReviewModal();
+                showToast('상담 후기가 제출되었습니다. 감사합니다!');
+            }
+        }
+
+        // Slot Management Grid Renderer (Teacher)
+        function renderSlotManagementGrid() {
+            const container = document.getElementById('slot-management-grid');
+            container.innerHTML = '';
+
+            availableSlots.forEach(slot => {
+                const switchHtml = `
+                    <div class="flex items-center justify-between p-3.5 border border-gray-200 rounded-xl bg-gray-50">
+                        <span class="text-xs font-bold text-gray-800">${slot.name}</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" ${slot.enabled ? 'checked' : ''} onchange="toggleSlot('${slot.id}')" class="sr-only peer">
+                            <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-blue"></div>
+                        </label>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', switchHtml);
+            });
+        }
+
+        function toggleSlot(id) {
+            const slot = availableSlots.find(s => s.id === id);
+            if (slot) {
+                slot.enabled = !slot.enabled;
+                saveData();
+                renderTimeSlots();
+                showToast('상담 가능 시간 설정이 변경되었습니다.');
+            }
+        }
+
+        // CSV Export Feature with Korean BOM Encoding
+        function exportToCSV() {
+            if (consultations.length === 0) {
+                showToast('내보낼 데이터가 없습니다.', 'error');
+                return;
+            }
+
+            let csvContent = "\uFEFF"; // UTF-8 BOM Header for Excel
+            csvContent += "신청ID,학번,학년,반,번호,이름,연락처,상담분야,상담형태,희망날짜,시간대,사전질문,상태,교사메모,학생소감,신청일시\n";
+
+            consultations.forEach(c => {
+                const row = [
+                    c.id,
+                    `"${c.studentInfo.studentId || ''}"`,
+                    c.studentInfo.grade,
+                    c.studentInfo.classNum,
+                    c.studentInfo.number,
+                    `"${c.studentInfo.name}"`,
+                    `"${c.studentInfo.phone}"`,
+                    `"${c.category}"`,
+                    `"${c.type}"`,
+                    c.date,
+                    `"${c.timeSlot}"`,
+                    `"${(c.question || '').replace(/"/g, '""')}"`,
+                    c.status,
+                    `"${(c.teacherNote || '').replace(/"/g, '""')}"`,
+                    `"${(c.review || '').replace(/"/g, '""')}"`,
+                    c.createdAt
+                ];
+                csvContent += row.join(",") + "\n";
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `금촌중_진로상담_명단_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('CSV 파일이 다운로드되었습니다.');
+        }
+
+        // Data Reset Feature
+        function clearAllData() {
+            if (confirm('경고: 모든 학생 상담 신청 데이터가 초기화됩니다. 계속 진행하시겠습니까?')) {
+                consultations = [];
+                saveData();
+                renderAdminDashboard();
+                updateMyReservationBadge();
+                showToast('전체 데이터가 초기화되었습니다.');
+            }
+        }
+
+        // Helper: Toast Message Display
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast-msg');
+            const toastText = document.getElementById('toast-text');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastText.innerText = msg;
+            if (type === 'error') {
+                toastIcon.className = "fa-solid fa-circle-exclamation text-rose-400 text-base";
+            } else {
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400 text-base";
+            }
+
+            toast.classList.remove('translate-y-10', 'opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        // Security Utility
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, function(m) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                }[m];
+            });
+        }
+    </script>
+</body>
+</html>
